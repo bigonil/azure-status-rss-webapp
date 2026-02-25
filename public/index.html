@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azure Fault RSS Monitor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Microsoft Azure Status RSS</p>
+        <h1>Fault / Incident Feed Monitor</h1>
+        <p class="subtitle">
+          Webapp Docker che legge il feed RSS ufficiale Azure Status e filtra eventi
+          relativi a fault, outage e degradation.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <div class="row">
+          <label>
+            Cerca
+            <input id="search" type="text" placeholder="es. SQL, Europe, outage" />
+          </label>
+          <label class="inline">
+            <input id="onlyFaults" type="checkbox" checked />
+            Solo fault/incident
+          </label>
+          <label>
+            Limite
+            <input id="limit" type="number" min="1" max="500" value="100" />
+          </label>
+        </div>
+        <div class="row actions">
+          <button id="refreshBtn">Aggiorna feed</button>
+          <button id="loadBtn" class="secondary">Applica filtri</button>
+        </div>
+      </section>
+
+      <section class="panel summary">
+        <div id="meta">Caricamento...</div>
+        <div id="feeds"></div>
+        <div id="errors"></div>
+      </section>
+
+      <section class="panel">
+        <div id="emptyState" class="empty hidden">
+          Nessun evento trovato. Il feed ufficiale Azure Status può risultare vuoto quando
+          non ci sono incidenti pubblicati.
+        </div>
+        <ul id="events" class="events"></ul>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
