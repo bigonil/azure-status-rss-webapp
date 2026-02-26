@@ -197,6 +197,12 @@ Output atteso:
 - `feedsSummary.totalItems` > 0 (con mock feed)
 - `notifierSummary.enabled: true`
 
+Override diretto della URL (senza env), utile per debug rapido:
+
+```bash
+npm run mcp:doctor -- --base-url http://127.0.0.1:57549
+```
+
 ### 9. Configura un host MCP (IDE / Agent runtime)
 
 Usa `mcp-server/server.mjs` come comando `stdio`.

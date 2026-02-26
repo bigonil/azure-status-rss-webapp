@@ -6,7 +6,22 @@ import { AzureRssApiClient, toPrettyJson } from "./api-client.mjs";
 const SERVER_NAME = "azure-status-rss-mcp";
 const SERVER_VERSION = "1.0.0";
 
-const client = new AzureRssApiClient();
+function readCliOption(name, alias = null) {
+  const args = process.argv.slice(2);
+  const names = [name, alias].filter(Boolean);
+  for (let i = 0; i < args.length; i += 1) {
+    const token = args[i];
+    for (const optionName of names) {
+      const prefix = `${optionName}=`;
+      if (token === optionName && args[i + 1]) return args[i + 1];
+      if (token.startsWith(prefix)) return token.slice(prefix.length);
+    }
+  }
+  return null;
+}
+
+const cliBaseUrl = readCliOption("--base-url", "--url");
+const client = new AzureRssApiClient(cliBaseUrl || undefined);
 
 function jsonTextResult(payload) {
   return {
@@ -164,6 +179,69 @@ function buildServer() {
   return server;
 }
 
+function buildDoctorHints(error) {
+  const cause = error?.cause;
+  const causeCode = cause?.code || error?.code || null;
+  const hints = [];
+  const examples = [];
+
+  hints.push("`mcp:doctor` non avvia la webapp: verifica che sia già in esecuzione.");
+
+  if (causeCode === "ECONNREFUSED") {
+    hints.push(
+      `Connessione rifiutata su ${client.baseUrl}: molto probabilmente la webapp non è attiva su quella porta.`
+    );
+  } else if (causeCode === "ETIMEDOUT" || causeCode === "UND_ERR_CONNECT_TIMEOUT") {
+    hints.push(
+      `Timeout di connessione verso ${client.baseUrl}: verifica firewall, porta e processo in ascolto.`
+    );
+  } else if (causeCode === "ENOTFOUND") {
+    hints.push(
+      `Host non risolto (${new URL(client.baseUrl).hostname}): controlla AZURE_RSS_APP_BASE_URL.`
+    );
+  } else if (String(error).includes("fetch failed")) {
+    hints.push(
+      "Errore di rete generico (`fetch failed`): webapp spenta, URL errato o porta diversa sono le cause più comuni."
+    );
+  }
+
+  hints.push(
+    "Se hai avviato `npm run start:mock`, usa l'URL stampato a console (`Webapp demo in ascolto su http://127.0.0.1:PORT`)."
+  );
+
+  examples.push({
+    shell: "CMD",
+    command:
+      "set AZURE_RSS_APP_BASE_URL=http://127.0.0.1:PORT && npm run mcp:doctor"
+  });
+  examples.push({
+    shell: "PowerShell",
+    command:
+      "$env:AZURE_RSS_APP_BASE_URL='http://127.0.0.1:PORT'; npm run mcp:doctor"
+  });
+  examples.push({
+    shell: "Git Bash",
+    command:
+      "export AZURE_RSS_APP_BASE_URL='http://127.0.0.1:PORT' && npm run mcp:doctor"
+  });
+  examples.push({
+    shell: "CLI direct override",
+    command:
+      "npm run mcp:doctor -- --base-url http://127.0.0.1:PORT"
+  });
+
+  return {
+    probableCauseCode: causeCode,
+    cause: cause ? String(cause) : null,
+    hints,
+    quickChecks: [
+      `curl ${client.baseUrl}/api/health`,
+      "npm run start:mock  (in un altro terminale)"
+    ],
+    examples
+  };
+}
+
 async function runDoctor() {
   console.log(`MCP doctor -> target webapp: ${client.baseUrl}`);
   try {
@@ -192,22 +270,24 @@ async function runDoctor() {
         }
       })
     );
-    process.exit(0);
+    return 0;
   } catch (error) {
+    const doctorHints = buildDoctorHints(error);
     console.error(
       toPrettyJson({
         ok: false,
         targetBaseUrl: client.baseUrl,
-        error: String(error)
+        error: String(error),
+        ...doctorHints
       })
     );
-    process.exit(1);
+    return 1;
   }
 }
 
 async function main() {
   if (process.argv.includes("--doctor")) {
-    await runDoctor();
+    process.exitCode = await runDoctor();
     return;
   }
 
