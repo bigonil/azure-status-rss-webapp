@@ -82,6 +82,143 @@ npm run mcp:doctor
 Documentazione dettagliata:
 - `mcp-server/README.md`
 
+## Avvio completo con MOCK + MCP (step-by-step)
+
+Questa procedura avvia tutto in locale senza dipendenze esterne:
+- webapp Azure RSS
+- feed RSS mock (evento `West Europe`)
+- SMTP mock (per verificare invio email)
+- MCP server (stdio) per integrazione con Agenti AI
+
+### 1. Apri la cartella del progetto
+
+```bash
+cd azure-status-rss-webapp
+```
+
+### 2. Installa dipendenze
+
+```bash
+npm install
+```
+
+### 3. Avvia la demo mock della webapp (feed mock + SMTP mock inclusi)
+
+```bash
+npm run start:mock
+```
+
+Cosa fa:
+- avvia la webapp Express
+- avvia un feed RSS mock locale
+- avvia un SMTP mock locale
+- abilita il notifier email verso il mock SMTP
+
+Output atteso (simile):
+- `Webapp demo in ascolto su http://127.0.0.1:3000`
+- `Feed mock: http://127.0.0.1:xxxxx/feed.xml`
+- `SMTP mock: smtp://127.0.0.1:xxxxx`
+
+Nota: se la porta `3000` è occupata, la demo usa automaticamente una porta libera e stampa l'URL corretto.
+
+### 4. Verifica la UI e il pulsante notifier
+
+Apri nel browser l'URL stampato a console (es. `http://127.0.0.1:3000` oppure una porta diversa).
+
+Controlla che siano presenti:
+- pulsante `Test Notifier Email`
+- elenco eventi (dal feed mock)
+
+### 5. Prova l'invio notifica mock dalla UI
+
+1. Clicca `Test Notifier Email`
+2. La UI esegue `POST /api/notifier/check`
+3. Dovresti vedere un messaggio di esito (email inviata / nessun nuovo evento / errore)
+
+Le email mock ricevute vengono salvate in:
+- `data/mock-smtp/` (`.eml` + `.json`)
+
+### 6. (Opzionale) Verifica automatica notifier mock
+
+In un altro terminale:
+
+```bash
+npm run test:notifier:mock
+```
+
+Questo test avvia un ambiente temporaneo e verifica automaticamente che una mail venga ricevuta dal mock SMTP.
+
+### 7. Avvia il MCP server (stdio) puntando alla webapp mock
+
+Apri **un altro terminale** nella stessa cartella `azure-status-rss-webapp`.
+
+Se la webapp mock è su `3000`:
+
+```bash
+npm run mcp:start
+```
+
+Se la webapp mock è partita su una porta diversa (es. `57549`), imposta la base URL prima di avviare MCP.
+
+PowerShell:
+
+```powershell
+$env:AZURE_RSS_APP_BASE_URL="http://127.0.0.1:57549"
+npm run mcp:start
+```
+
+Git Bash:
+
+```bash
+export AZURE_RSS_APP_BASE_URL="http://127.0.0.1:57549"
+npm run mcp:start
+```
+
+### 8. Verifica MCP -> webapp con doctor mode
+
+In un terminale separato (stessa cartella):
+
+PowerShell (se porta non standard):
+
+```powershell
+$env:AZURE_RSS_APP_BASE_URL="http://127.0.0.1:57549"
+npm run mcp:doctor
+```
+
+Git Bash (se porta non standard):
+
+```bash
+export AZURE_RSS_APP_BASE_URL="http://127.0.0.1:57549"
+npm run mcp:doctor
+```
+
+Output atteso:
+- `ok: true`
+- `feedsSummary.totalItems` > 0 (con mock feed)
+- `notifierSummary.enabled: true`
+
+### 9. Configura un host MCP (IDE / Agent runtime)
+
+Usa `mcp-server/server.mjs` come comando `stdio`.
+
+Esempio (generico):
+
+```json
+{
+  "mcpServers": {
+    "azure-rss-status": {
+      "command": "node",
+      "args": ["C:\\\\Users\\\\luca.bigoni\\\\azure-status-rss-webapp\\\\mcp-server\\\\server.mjs"],
+      "env": {
+        "AZURE_RSS_APP_BASE_URL": "http://127.0.0.1:3000"
+      }
+    }
+  }
+}
+```
+
+Se la demo mock non usa `3000`, sostituisci il valore con la porta stampata da `start:mock`.
+
 ## Abilitare notifiche email (Europa)
 
 1. Copia `.env.example` in `.env`
