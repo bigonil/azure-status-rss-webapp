@@ -4,10 +4,24 @@ services:
     container_name: azure-rss-webapp
     ports:
       - "3000:3000"
+    volumes:
+      - ./data:/app/data
     environment:
       PORT: "3000"
       CACHE_TTL_MS: "60000"
       REQUEST_TIMEOUT_MS: "10000"
       # URL ufficiale Azure Status RSS (status.azure.com reindirizza qui)
       AZURE_RSS_FEEDS: "https://azure.status.microsoft/en-us/status/feed/"
+      # Notifiche email fault/outage Europa
+      EMAIL_NOTIFICATIONS_ENABLED: "${EMAIL_NOTIFICATIONS_ENABLED:-false}"
+      ALERT_EMAIL_TO: "${ALERT_EMAIL_TO:-luca.bigoni@gruppohera.it}"
+      ALERT_EMAIL_FROM: "${ALERT_EMAIL_FROM:-azure-rss-webapp@localhost}"
+      NOTIFY_POLL_MS: "${NOTIFY_POLL_MS:-300000}"
+      NOTIFY_MAX_ITEM_AGE_HOURS: "${NOTIFY_MAX_ITEM_AGE_HOURS:-72}"
+      # SMTP (compilare in .env locale / secret manager)
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_SECURE: "${SMTP_SECURE:-false}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
     restart: unless-stopped

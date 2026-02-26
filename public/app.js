@@ -4,6 +4,8 @@ const els = {
   limit: document.getElementById("limit"),
   refreshBtn: document.getElementById("refreshBtn"),
   loadBtn: document.getElementById("loadBtn"),
+  notifierBtn: document.getElementById("notifierBtn"),
+  notifierResult: document.getElementById("notifierResult"),
   meta: document.getElementById("meta"),
   feeds: document.getElementById("feeds"),
   errors: document.getElementById("errors"),
@@ -46,6 +48,21 @@ async function loadEvents(refresh = false) {
   const res = await fetch(`/api/events?${query}`);
   if (!res.ok) throw new Error(`Events fetch failed (${res.status})`);
   return res.json();
+}
+
+async function triggerNotifierCheck() {
+  const res = await fetch("/api/notifier/check", { method: "POST" });
+  const text = await res.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error(`Notifier response non valida (${res.status}): ${text}`);
+  }
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.error || `Notifier failed (${res.status})`);
+  }
+  return payload;
 }
 
 function renderSummary(summary, events) {
@@ -111,6 +128,12 @@ function renderEvents(items) {
   els.events.innerHTML = html;
 }
 
+function renderNotifierResult(message, kind = "info") {
+  els.notifierResult.classList.remove("hidden", "ok", "error", "info");
+  els.notifierResult.classList.add(kind);
+  els.notifierResult.textContent = message;
+}
+
 async function refreshPage(forceRefresh = false) {
   try {
     els.meta.textContent = "Caricamento feed...";
@@ -133,6 +156,29 @@ els.loadBtn.addEventListener("click", () => {
 
 els.refreshBtn.addEventListener("click", () => {
   refreshPage(true);
+});
+
+els.notifierBtn.addEventListener("click", async () => {
+  const originalText = els.notifierBtn.textContent;
+  els.notifierBtn.disabled = true;
+  els.notifierBtn.textContent = "Invio in corso...";
+  renderNotifierResult("Esecuzione controllo notifier...", "info");
+
+  try {
+    const result = await triggerNotifierCheck();
+    const msg = result.sent
+      ? `Email inviata: ${result.newItems} nuovi eventi (match=${result.matched}).`
+      : result.skipped
+        ? `Notifier non eseguito: ${result.reason || "skip"}.`
+        : `Nessuna nuova email inviata (match=${result.matched ?? 0}, nuovi=${result.newItems ?? 0}).`;
+    renderNotifierResult(`${msg} Risposta: ${JSON.stringify(result)}`, "ok");
+    await refreshPage(true);
+  } catch (error) {
+    renderNotifierResult(`Errore notifier: ${String(error)}`, "error");
+  } finally {
+    els.notifierBtn.disabled = false;
+    els.notifierBtn.textContent = originalText;
+  }
 });
 
 els.search.addEventListener("keydown", (event) => {

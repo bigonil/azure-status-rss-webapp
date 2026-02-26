@@ -6,13 +6,20 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "start:mock": "node scripts/start-local-mock-demo.js",
+    "mock:smtp": "node scripts/mock-smtp-server.js",
+    "test:notifier:mock": "node scripts/verify-notifier-local-mock.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "express": "^4.21.2",
-    "fast-xml-parser": "^5.4.1"
+    "fast-xml-parser": "^5.4.1",
+    "nodemailer": "^8.0.1"
+  },
+  "devDependencies": {
+    "smtp-server": "^3.13.6"
   }
 }

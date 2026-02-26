@@ -1,0 +1,34 @@
+services:
+  azure-rss-webapp:
+    depends_on:
+      - mock-rss
+      - mailhog
+    environment:
+      EMAIL_NOTIFICATIONS_ENABLED: "true"
+      ALERT_EMAIL_TO: "luca.bigoni@gruppohera.it"
+      ALERT_EMAIL_FROM: "azure-alerts@example.local"
+      AZURE_RSS_FEEDS: "http://mock-rss/feed.xml"
+      SMTP_HOST: "mailhog"
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      NOTIFY_POLL_MS: "60000"
+      NOTIFY_MAX_ITEM_AGE_HOURS: "168"
+
+  mock-rss:
+    image: nginx:alpine
+    container_name: azure-rss-mock-feed
+    volumes:
+      - ./mock-rss:/usr/share/nginx/html:ro
+    ports:
+      - "8088:80"
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: azure-rss-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
