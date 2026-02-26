@@ -66,6 +66,21 @@ Verifica di essere nella cartella `azure-status-rss-webapp` e rilancia con rebui
 - `NOTIFY_MAX_ITEM_AGE_HOURS` (evita notifiche su eventi troppo vecchi, default `72`)
 - `EUROPE_REGION_KEYWORDS` (lista keyword custom per identificare eventi europei)
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` (config SMTP)
+- `AZURE_RSS_APP_BASE_URL`, `AZURE_RSS_APP_TIMEOUT_MS` (usati dal MCP server verso la webapp)
+
+## Integrazione MCP (Agenti AI)
+
+Il progetto include un MCP server (`mcp-server/server.mjs`) che espone la webapp agli Agenti AI tramite protocollo MCP, usando le API REST già presenti come backend.
+
+Comandi:
+
+```bash
+npm run mcp:start
+npm run mcp:doctor
+```
+
+Documentazione dettagliata:
+- `mcp-server/README.md`
 
 ## Abilitare notifiche email (Europa)
 
