@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "azure-rss-status": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["mcp-server/server.mjs"],
+      "env": {
+        "AZURE_RSS_APP_BASE_URL": "http://127.0.0.1:3000",
+        "AZURE_RSS_APP_TIMEOUT_MS": "15000"
+      }
+    }
+  }
+}
